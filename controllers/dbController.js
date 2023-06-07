@@ -2,11 +2,11 @@ const db = require('../db/db.js');
 const config = require('../config.js');
 
 class dbController {
-    async createUser(username, password) {
+    async createUser(username, password, date) {
         try {
             const thisClass = new dbController();
             password = config.crypto.SHA256(password).toString();
-            await db.query('INSERT INTO person (username, password) values ($1, $2) RETURNING *', [ username, password ]);
+            await db.query('INSERT INTO person (username, password, date) values ($1, $2, $3) RETURNING *', [ username, password, date ]);
             console.log(thisClass.getOneUser(username));
             return thisClass.getOneUser(username);
         } catch (e) {

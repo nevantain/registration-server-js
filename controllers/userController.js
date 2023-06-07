@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const dbController = require('./dbController.js');
 const validController = require('./validController.js');
 
-const generateAccessToken  = (id) => {
-    return jwt.sign(id, config.secret);
+const generateAccessToken  = (id, username) => {
+    return jwt.sign({ id, username }, config.secret);
 }
 
 class userController {
@@ -21,8 +21,12 @@ class userController {
                 return res.status(400).json({ message: 'user already exits' });
             }
             // CREATE USER
-            await dbController.createUser(username, password);
-            return res.status(200).json('user created');
+            const dateNow = new Date();
+            const date = `${dateNow.getDate()}.${dateNow.getMonth()}.${dateNow.getFullYear()}-${dateNow.getHours()}:${dateNow.getMinutes()}:${dateNow.getSeconds()}`
+            await dbController.createUser(username, password, date);
+            const userPayload = await dbController.getOneUser(username);
+            const token = generateAccessToken(userPayload.id, userPayload.username);
+            return res.status(200).json({ token: token, user: await dbController.getOneUser(username)});
         } catch (e) {
             console.log(e);
             return res.status(400).json({ 'user not created': e });
@@ -37,9 +41,10 @@ class userController {
             if (!candidate) {
                 return res.json(400, { message: 'user not found' });
             }
-            const token = generateAccessToken(candidate.id);
-            return res.status(200).json({token});
+            const token = generateAccessToken(candidate.id, candidate.username);
+            return res.status(200).json({token: token, user: await dbController.getOneUser(username)});
         } catch (e) {
+            console.log(e);
             return res.status(400).json({ 'user not logined': e });
         }
     }
